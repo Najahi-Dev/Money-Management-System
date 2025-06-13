@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Money Tracker (LKR)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .container {
+            background: #2c2c2c;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: #333;
+            color: #e0e0e0;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #1abc9c;
+            background-color: #3a3a3a;
+            outline: none;
+        }
+
+        input::placeholder,
+        select::placeholder {
+            color: #888;
+        }
+
+        button {
+            background-color: #1abc9c;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #16a085;
+            transform: scale(1.05);
+        }
+
+        .clear-btn {
+            background-color: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .download-btn {
+            background-color: #3498db;
+        }
+
+        .download-btn:hover {
+            background-color: #2980b9;
+        }
+
+        #balance {
+            font-size: 1.5em;
+            margin: 25px 0;
+            text-align: center;
+            color: #ffffff;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        #feedback {
+            margin: 10px 0;
+            text-align: center;
+            color: #ff6b6b;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #444;
+            padding: 12px;
+            text-align: left;
+            opacity: 0;
+            animation: fadeInRow 0.5s ease-in forwards;
+        }
+
+        th {
+            background-color: #333;
+            color: #e0e0e0;
+        }
+
+        .income {
+            color: #2ecc71;
+        }
+
+        .expense {
+            color: #ff4757;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            padding: 6px 12px;
+            font-size: 14px;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+            transform: scale(1.05);
+        }
+
+        .filter-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .date-filter {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chartContainer {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2c2c2c;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        canvas {
+            background-color: #333;
+            border-radius: 6px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Pocket Money Tracker (LKR)</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" placeholder="Enter description">
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount (LKR):</label>
+            <input type="number" id="amount" placeholder="Enter amount" step="0.01" min="0.01">
+        </div>
+        <div class="form-group">
+            <label for="transactionDate">Date:</label>
+            <input type="date" id="transactionDate">
+        </div>
+        <div class="form-group">
+            <label for="type">Type:</label>
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+        </div>
+        <button onclick="addTransaction()">Add Transaction</button>
+        <button class="download-btn" onclick="downloadReport()">Download PDF Report</button>
+        <div id="feedback"></div>
+        <div id="balance">Balance: ₨0.00</div>
+        <div class="filter-group">
+            <div class="date-filter">
+                <div class="form-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate" onchange="filterByDate()">
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate" onchange="filterByDate()">
+                </div>
+            </div>
+            <button class="clear-btn" onclick="clearAll()">Clear All Data</button>
+        </div>
+        <table id="transactionTable">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="transactionBody"></tbody>
+        </table>
+    </div>
+    <div id="chartContainer">
+        <canvas id="transactionChart"></canvas>
+    </div>
+
+    <script>
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let balance = transactions.reduce((acc, curr) =>
+            curr.type === 'income' ? acc + curr.amount : acc - curr.amount, 0);
+        let chart;
+
+        function updateBalance() {
+            document.getElementById('balance').textContent = `Balance: ₨${balance.toFixed(2)}`;
+        }
+
+        function showFeedback(message, isError = true) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.style.color = isError ? '#ff6b6b' : '#2ecc71';
+            setTimeout(() => feedback.textContent = '', 3000);
+        }
+
+        function updateTable(filteredTransactions = transactions) {
+            const tbody = document.getElementById('transactionBody');
+            tbody.innerHTML = '';
+            filteredTransactions.forEach((transaction, index) => {
+                const row = document.createElement('tr');
+                row.style.animationDelay = `${index * 0.1}s`;
+                row.innerHTML = `
+          <td>${transaction.description}</td>
+          <td class="${transaction.type}">${transaction.type === 'income' ? '+' : '-'}₨${transaction.amount.toFixed(2)}</td>
+          <td>${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}</td>
+          <td>${transaction.date}</td>
+          <td><button class="delete-btn" onclick="deleteTransaction(${index})">Delete</button></td>
+        `;
+                tbody.appendChild(row);
+            });
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            updateBalance();
+            updateChart();
+        }
+
+        function addTransaction() {
+            const description = document.getElementById('description').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const transactionDate = document.getElementById('transactionDate').value || new Date().toISOString().split('T')[0];
+            const type = document.getElementById('type').value;
+
+            if (!description || isNaN(amount) || amount <= 0) {
+                showFeedback('Please enter a valid description and amount.');
+                return;
+            }
+
+            const transaction = {
+                description,
+                amount,
+                type,
+                date: transactionDate
+            };
+
+            transactions.push(transaction);
+            balance = type === 'income' ? balance + amount : balance - amount;
+
+            updateTable();
+            showFeedback('Transaction added successfully!', false);
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('transactionDate').value = '';
+        }
+
+        function deleteTransaction(index) {
+            const transaction = transactions[index];
+            balance = transaction.type === 'income' ? balance - transaction.amount : balance + transaction.amount;
+            transactions.splice(index, 1);
+            updateTable();
+            showFeedback('Transaction deleted successfully!', false);
+        }
+
+        function filterByDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            let filteredTransactions = [...transactions];
+
+            if (startDate && endDate) {
+                filteredTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    return tDate >= start && tDate <= end;
+                });
+            }
+
+            updateTable(filteredTransactions);
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all transactions?')) {
+                transactions = [];
+                balance = 0;
+                localStorage.removeItem('transactions');
+                updateTable();
+                showFeedback('All data cleared!', false);
+            }
+        }
+
+        function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const totalIncome = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenses = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            doc.setFontSize(16);
+            doc.text('Pocket Money Tracker Report', 20, 20);
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 20, 30);
+            doc.text('----------------------------------------', 20, 35);
+            doc.text(`Current Balance: ₨${balance.toFixed(2)}`, 20, 45);
+            doc.text(`Total Income: ₨${totalIncome.toFixed(2)}`, 20, 55);
+            doc.text(`Total Expenses: ₨${totalExpenses.toFixed(2)}`, 20, 65);
+            doc.text('----------------------------------------', 20, 75);
+            doc.text('Transactions:', 20, 85);
+
+            let y = 95;
+            transactions.forEach(t => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(
+                    `${t.date} | ${t.type.charAt(0).toUpperCase() + t.type.slice(1)} | ₨${t.amount.toFixed(2)} | ${t.description}`,
+                    20,
+                    y
+                );
+                y += 10;
+            });
+
+            doc.save(`Pocket_Money_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+            showFeedback('PDF report downloaded successfully!', false);
+        }
+
+        function updateChart() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            let filteredTransactions = [...transactions];
+
+            if (startDate && endDate) {
+                filteredTransactions = transactions.filter(t => {
+                    const tDate = new Date(t.date);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    return tDate >= start && tDate <= end;
+                });
+            }
+
+            const dates = [...new Set(filteredTransactions.map(t => t.date))].sort();
+            const incomeData = dates.map(date => {
+                return filteredTransactions
+                    .filter(t => t.type === 'income' && t.date === date)
+                    .reduce((sum, t) => sum + t.amount, 0);
+            });
+            const expenseData = dates.map(date => {
+                return filteredTransactions
+                    .filter(t => t.type === 'expense' && t.date === date)
+                    .reduce((sum, t) => sum + t.amount, 0);
+            });
+
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('transactionChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Income (LKR)',
+                            data: incomeData,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Expenses (LKR)',
+                            data: expenseData,
+                            borderColor: '#ff4757',
+                            backgroundColor: 'rgba(255, 71, 87, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount (LKR)',
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: '#444'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: '#444'
+                            },
+                            ticks: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        updateTable();
+    </script>
+</body>
+
+</html>
